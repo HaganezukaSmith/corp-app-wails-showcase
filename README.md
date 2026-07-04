@@ -122,3 +122,9 @@ templates/                  # DOCX/XLSX шаблоны документов
 go test ./internal/server/...
 wails dev
 ```
+
+## Пользовательский интерфейс
+<img width="1919" height="904" alt="image" src="https://github.com/user-attachments/assets/a44b9dc7-d06a-46ee-bacb-1eb49fc72379" />
+<img width="1919" height="909" alt="image" src="https://github.com/user-attachments/assets/2dd6c7b4-a7ca-4aed-9ae0-a0d47cd55405" />
+
+
