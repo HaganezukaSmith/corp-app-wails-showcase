@@ -1,2 +1,124 @@
-# corp-app-wails-showcase
-Portfolio showcase of a corporate task management app (Go, Wails, SQLite). Source code is closed due to NDA.
+# Корпоративное приложение — Конструкторское бюро
+
+Локальное корпоративное приложение: задачи, мессенджер, акты, расходы, сотрудники.
+
+**Платформа:** Go + Wails v2 (десктоп)
+**База данных:** SQLite
+**Назначение:** внутреннее приложение для конструкторского бюро — учёт задач, внутренний мессенджер, работа с актами и расходами, управление сотрудниками.
+
+---
+
+## Технологии
+
+| Компонент | Технология |
+|-----------|-----------|
+| Backend | Go 1.24+ |
+| UI / десктоп-обёртка | Wails v2, WebView2 Runtime (Windows) |
+| База данных | SQLite |
+| Frontend | JavaScript (`frontend/js`) |
+| Документы | DOCX/XLSX-шаблоны |
+| Уведомления | WebSocket, push Windows (опционально) |
+
+---
+
+## Быстрый старт
+
+```bat
+build.bat
+start.bat
+```
+
+Готовый исполняемый файл: `build\bin\corp-app.exe`
+
+Требования: Go 1.24+, [Wails v2](https://wails.io/), WebView2 Runtime (Windows).
+
+---
+
+## Структура проекта
+
+```
+internal/server/            # Backend (API)
+  ├── handlers.go
+  ├── handlers_auth.go
+  ├── handlers_admin.go
+  ├── handlers_tasks.go
+  ├── handlers_chats.go
+  ├── handlers_misc.go
+  ├── handlers_vault.go
+  ├── handlers_export.go
+  └── superadmin.go         # Суперпользователь (задан в коде)
+
+frontend/js/                # Frontend
+  ├── app-core.js
+  ├── app-tasks.js
+  ├── app-modules.js
+  └── app-profile-sync.js
+
+templates/                  # DOCX/XLSX шаблоны документов
+```
+
+---
+
+## Данные
+
+По умолчанию каталог данных: `%APPDATA%\CorpApp\`
+
+| Папка | Содержимое |
+|-------|------------|
+| `data\corp.db` | База SQLite |
+| `uploads\` | Вложения |
+| `backups\` | Резервные копии БД |
+| `templates\` | DOCX/XLSX-шаблоны (копируются при первом запуске) |
+
+**Portable-режим:** положите каталог `data\` рядом с `corp-app.exe`.
+
+В приложении: **Синхронизация** → «Открыть папку данных» (для администратора).
+
+---
+
+## Пользователи и роли
+
+- Суперпользователь **Haganezuka** задан в коде (`internal/server/superadmin.go`), пароль не сбрасывается при перезапуске.
+- Саморегистрация **выключена** по умолчанию. Новых пользователей создаёт администратор: **Админ** → **Пользователи** → **Добавить пользователя**.
+- Включить саморегистрацию (не рекомендуется в LAN): `CORP_APP_ALLOW_REGISTER=1`.
+
+---
+
+## Конфигурация (переменные окружения)
+
+| Переменная | Значение по умолчанию | Назначение |
+|------------|------------------------|------------|
+| `CORP_APP_DATA` | — | Каталог данных |
+| `CORP_APP_LAN` | `0` | Отключить HTTP для Wi‑Fi |
+| `CORP_APP_PORT` | `8765` | Порт LAN |
+| `CORP_APP_ALLOW_REGISTER` | — | Разрешить `/api/register` |
+| `CORP_APP_AUTO_BACKUP` | — | Копия БД при старте (раз в сутки) |
+| `CORP_APP_CORS_ANY` | — | CORS `*` (только для отладки) |
+
+---
+
+## Функциональность
+
+### Резервное копирование
+- Вручную: **Синхронизация** → «Создать копию»
+- Скрипт: `scripts\backup.ps1`
+- Go: `go run scripts\backup_db.go`
+
+### Безопасность
+- **Хранилище паролей (Vault)** — записи шифруются AES-GCM ключом, производным от пароля пользователя (PBKDF2). При первом чтении старые открытые записи автоматически перешифровываются.
+- **Смена пароля** — профиль → «Сменить пароль» (`PUT /api/profile/password`); при смене vault перешифровывается.
+
+### Excel
+- Экспорт и импорт на страницах задач и расходов (`GET /api/export/...`, `POST /api/import/tasks` / `expenses` с полем `file`).
+
+### Уведомления
+- В реальном времени через WebSocket; колокольчик → переход по клику; опционально push Windows.
+
+---
+
+## Разработка
+
+```bat
+go test ./internal/server/...
+wails dev
+```
